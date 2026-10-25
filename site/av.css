@@ -124,3 +124,6 @@ footer a{text-underline-offset:4px}
   html{scroll-behavior:auto}
   .btn{transition:none}
 }
+
+code,.term,.cmd h3,.cmd .sig,.cmd dt,pre.snip,.nums b,ol.layers li::before{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+code{white-space:nowrap}
