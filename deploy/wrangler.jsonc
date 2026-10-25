@@ -1,0 +1,12 @@
+{
+  "name": "zengav-site",
+  "main": "./worker/av.mjs",
+  "compatibility_date": "2026-10-01",
+  "account_id": "a1502579ae41063d87c9144314ed6ed8",
+  "workers_dev": false,
+  "routes": [
+    {"pattern": "zengbot.com/av", "zone_name": "zengbot.com"},
+    {"pattern": "zengbot.com/av/*", "zone_name": "zengbot.com"}
+  ],
+  "assets": {"directory": "../site", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "404-page"}
+}
