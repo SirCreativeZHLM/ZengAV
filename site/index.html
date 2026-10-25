@@ -8,19 +8,12 @@
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="icon.png" type="image/png">
-<link rel="preload" href="fonts/familjen.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/zb.css">
 <link rel="stylesheet" href="av.css">
+<script src="/zb.js" defer></script>
 </head>
 <body>
-<header class="wrap top">
-  <a class="mark" href="./"><b>Zeng</b>AV</a>
-  <nav aria-label="Page">
-    <a href="#jobs">Two jobs</a>
-    <a href="#how">How it decides</a>
-    <a href="#limits">Limits</a>
-    <a href="#download">Download</a>
-  </nav>
-</header>
+<div data-zb-top data-zb-name="ZengAV" data-zb-links="Two jobs|#jobs,How it decides|#how,Limits|#limits,Download|#download"></div>
 
 <main>
 <div class="wrap hero">
@@ -162,11 +155,6 @@ cargo install --git https://github.com/SirCreativeZHLM/ZengAV --no-default-featu
 </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <span>ZengAV is free software, licensed MIT or Apache-2.0, at your choice. Interface font: Familjen Grotesk, SIL Open Font License.</span>
-    <span><a href="https://github.com/SirCreativeZHLM/ZengAV">Source</a> &nbsp; <a href="/">zengbot.com</a></span>
-  </div>
-</footer>
+<div data-zb-foot data-zb-note="ZengAV is free software, licensed MIT or Apache-2.0, at your choice."></div>
 </body>
 </html>

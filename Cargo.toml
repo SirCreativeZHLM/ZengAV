@@ -1,6 +1,6 @@
 [package]
 name = "zengav"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "No-bloat antivirus: scan the computer, check files or folders"
 default-run = "zengav"

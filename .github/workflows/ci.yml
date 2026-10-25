@@ -56,6 +56,8 @@ jobs:
           mkdir -p dist/ZengAV.app/Contents/MacOS dist/ZengAV.app/Contents/Resources
           cp $B/zengav-gui dist/ZengAV.app/Contents/MacOS/ZengAV
           cp $B/zengav dist/zengav
+          cp $B/zengav dist/ZengAV.app/Contents/Resources/zengav
+          if cmp -s $B/zengav-gui $B/zengav; then echo "GUI and CLI binaries are identical"; exit 1; fi
           cp packaging/Info.plist dist/ZengAV.app/Contents/Info.plist
           cp packaging/ZengAV.icns dist/ZengAV.app/Contents/Resources/ZengAV.icns
           codesign --force --deep --sign - dist/ZengAV.app
@@ -67,7 +69,9 @@ jobs:
           B=target/${{ matrix.target }}/release
           mkdir -p dist/ZengAV
           cp $B/zengav-gui dist/ZengAV/ZengAV
-          cp $B/zengav dist/ZengAV/zengav
+          mkdir -p dist/ZengAV/cli
+          cp $B/zengav dist/ZengAV/cli/zengav
+          if cmp -s $B/zengav-gui $B/zengav; then echo "GUI and CLI binaries are identical"; exit 1; fi
           cp packaging/zengav.desktop packaging/zengav.png dist/ZengAV/
           tar -C dist -czf ${{ matrix.name }}.tar.gz ZengAV
           shasum -a 256 ${{ matrix.name }}.tar.gz > ${{ matrix.name }}.tar.gz.sha256
@@ -77,8 +81,10 @@ jobs:
         run: |
           $B = "target/${{ matrix.target }}/release"
           New-Item -ItemType Directory -Force dist/ZengAV | Out-Null
+          New-Item -ItemType Directory -Force dist/ZengAV/cli | Out-Null
           Copy-Item "$B/zengav-gui.exe" "dist/ZengAV/ZengAV.exe"
-          Copy-Item "$B/zengav.exe" "dist/ZengAV/zengav.exe"
+          Copy-Item "$B/zengav.exe" "dist/ZengAV/cli/zengav.exe"
+          if ((Get-FileHash "dist/ZengAV/ZengAV.exe").Hash -eq (Get-FileHash "dist/ZengAV/cli/zengav.exe").Hash) { throw "GUI and CLI binaries are identical" }
           Compress-Archive -Path dist/ZengAV -DestinationPath ${{ matrix.name }}.zip
           (Get-FileHash ${{ matrix.name }}.zip -Algorithm SHA256).Hash.ToLower() + "  ${{ matrix.name }}.zip" | Out-File -Encoding ascii ${{ matrix.name }}.zip.sha256
       - uses: softprops/action-gh-release@v2

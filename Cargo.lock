@@ -7311,7 +7311,7 @@ dependencies = [
 
 [[package]]
 name = "zengav"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clap",
  "dirs 5.0.1",

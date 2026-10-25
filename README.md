@@ -2,7 +2,7 @@
 
 A no-bloat, open-source antivirus for macOS, Windows and Linux with two jobs: scan the whole computer, or check files and folders you choose. It only looks when you ask it to.
 
-**Window and tray:** open `ZengAV` (the app) for a black-and-white window with Scan, Check (files, folder or drag and drop), a Signatures panel and per-finding Delete / Accept / Skip. A tray icon offers Open, Scan, Check and Quit; it does not scan in the background. `zengav-gui <path>...` opens straight into a check.
+**Window and tray:** open `ZengAV` (the app) for a black-and-white window with Scan, Check (files, folder or drag and drop), a Signatures panel and per-finding Delete / Accept / Skip. A tray icon offers Open, Scan, Check and Quit; it does not scan in the background. `zengav-gui <path>...` opens straight into a check. Downloads: the app is `ZengAV` (macOS app bundle, `ZengAV.exe`, `ZengAV`), and the command line is `zengav` (macOS: next to the app and inside `ZengAV.app/Contents/Resources/`; Windows and Linux: in the `cli` folder).
 
 **Command line:** the same engine, as a separate small program.
 
