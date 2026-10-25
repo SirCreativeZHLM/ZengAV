@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ZengAV
+Comment=Scan the computer or check files for malware
+Exec=ZengAV
+Icon=zengav
+Categories=Utility;Security;
+Terminal=false

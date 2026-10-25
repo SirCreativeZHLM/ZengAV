@@ -1,9 +1,4 @@
-mod cache;
-mod db;
-mod heur;
-mod scan;
-mod update;
-mod yara;
+use zengav::{db, scan, update};
 
 use clap::{Parser, Subcommand};
 use std::io::{self, BufRead, IsTerminal, Write};
@@ -58,10 +53,12 @@ fn main() -> ExitCode {
         Cmd::Check { paths, opts } => (paths, opts),
     };
     if opts.update {
-        update::run();
+        for line in update::run() {
+            eprintln!("{line}");
+        }
     }
     let database = db::Db::load();
-    let so = scan::Options { verbose: opts.verbose, heuristics: opts.heuristics, full: opts.full };
+    let so = scan::Options { verbose: opts.verbose, heuristics: opts.heuristics, full: opts.full, progress: None };
     let report = scan::run(&roots, &database, &so);
     println!(
         "Scanned {} files ({} unchanged skipped, {} unreadable)",

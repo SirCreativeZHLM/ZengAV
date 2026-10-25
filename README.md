@@ -1,11 +1,17 @@
 # ZengAV
 
-A no-bloat, open-source antivirus for macOS, Windows and Linux. Two commands, nothing running in the background.
+A no-bloat, open-source antivirus for macOS, Windows and Linux with two jobs: scan the whole computer, or check files and folders you choose. It only looks when you ask it to.
+
+**Window and tray:** open `ZengAV` (the app) for a black-and-white window with Scan, Check (files, folder or drag and drop), a Signatures panel and per-finding Delete / Accept / Skip. A tray icon offers Open, Scan, Check and Quit; it does not scan in the background. `zengav-gui <path>...` opens straight into a check.
+
+**Command line:** the same engine, as a separate small program.
 
 ```
 zengav scan                  # scan the whole computer
 zengav check <path>...       # scan files or folders you choose
 ```
+
+Build only the command line (no window, tray or GUI libraries): `cargo build --release --no-default-features`.
 
 Findings are reported, then you pick per file: **d**elete, **a**ccept (never flag that exact content again) or **s**kip.
 
@@ -50,4 +56,4 @@ cargo test
 
 ## License
 
-MIT OR Apache-2.0.
+MIT OR Apache-2.0. The window uses Familjen Grotesk (SIL Open Font License, see `assets/OFL.txt`).

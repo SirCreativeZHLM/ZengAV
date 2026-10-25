@@ -23,10 +23,30 @@ pub struct Report {
     pub detections: Vec<Detection>,
 }
 
+#[derive(Default)]
 pub struct Options {
     pub verbose: bool,
     pub heuristics: bool,
     pub full: bool,
+    /// Live counters and a cancel flag, for interfaces that show progress.
+    pub progress: Option<std::sync::Arc<Progress>>,
+}
+
+#[derive(Default)]
+pub struct Progress {
+    pub files: AtomicU64,
+    pub current: Mutex<String>,
+    pub cancel: std::sync::atomic::AtomicBool,
+}
+
+impl Progress {
+    fn cancelled(&self) -> bool {
+        self.cancel.load(Relaxed)
+    }
+}
+
+pub fn delete_file(path: &Path) -> std::io::Result<()> {
+    std::fs::remove_file(path)
 }
 
 /// Pseudo or volatile filesystems that hold no files worth scanning.
@@ -92,10 +112,16 @@ pub fn run(roots: &[PathBuf], db: &Db, opts: &Options) -> Report {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file())
         });
+        let files = files.take_while(|_| !opts.progress.as_ref().is_some_and(|p| p.cancelled()));
         files.par_bridge().for_each_init(
             || (rules.as_ref().map(crate::yara::scanner), spill.as_ref().map(|s| s.writer())),
             |(yscan, out), e| {
                 let path = e.path();
+                if let Some(p) = &opts.progress {
+                    if p.files.fetch_add(1, Relaxed) % 64 == 0 {
+                        *p.current.lock().unwrap() = path.display().to_string();
+                    }
+                }
                 let md = e.metadata().ok();
                 let ce = md.as_ref().and_then(|m| cache::entry(path, m));
                 if !opts.full && ce.is_some_and(|c| cache.hit(c)) {

@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ZengAV</title>
-<meta name="description" content="ZengAV is an open-source antivirus for macOS, Windows and Linux with two commands: scan the whole computer, or check the files you choose. Nothing runs in the background.">
+<meta name="description" content="ZengAV is a small open-source antivirus for macOS, Windows and Linux. Scan the whole computer or check the files you choose, from a clean window or the command line.">
 <meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="icon.png" type="image/png">
 <link rel="preload" href="fonts/familjen.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="av.css">
 </head>
@@ -13,7 +15,7 @@
 <header class="wrap top">
   <a class="mark" href="./"><b>Zeng</b>AV</a>
   <nav aria-label="Page">
-    <a href="#commands">Commands</a>
+    <a href="#jobs">Two jobs</a>
     <a href="#how">How it decides</a>
     <a href="#limits">Limits</a>
     <a href="#download">Download</a>
@@ -22,41 +24,38 @@
 
 <main>
 <div class="wrap hero">
-  <h1>Two commands. Nothing running in the background.</h1>
-  <p class="lede">ZengAV is an open-source antivirus for macOS, Windows and Linux. <code>scan</code> checks the whole computer. <code>check</code> looks at the files or folders you pick. When it finds something, you decide: delete it, accept it, or skip it.</p>
-  <div class="actions">
-    <a class="btn primary" href="#download">Download ZengAV</a>
-    <a class="btn" href="https://github.com/SirCreativeZHLM/ZengAV">Read the source</a>
+  <div>
+    <h1>Scan the computer. Check a file. Nothing else.</h1>
+    <p class="lede">ZengAV is a small open-source antivirus for macOS, Windows and Linux. It has one window with two jobs, and the same two jobs on the command line. It only looks when you ask it to.</p>
+    <div class="actions">
+      <a class="btn primary" href="#download">Download ZengAV</a>
+      <a class="btn" href="https://github.com/SirCreativeZHLM/ZengAV">Read the source</a>
+    </div>
   </div>
-
-  <div class="term" role="img" aria-label="Terminal session: zengav check on a folder finds one threat, a test file, and asks whether to delete, accept or skip it.">
-    <span class="l" style="--i:0"><span class="p">$</span> zengav check ~/Downloads</span>
-    <span class="l dim" style="--i:1">Scanned 412 files (0 unchanged skipped, 0 unreadable)</span>
-    <span class="l bad" style="--i:2">1 threat(s) found:</span>
-    <span class="l" style="--i:3">  ~/Downloads/eicar.com  [275a021bbfb6] <span class="bad">known malware hash</span></span>
-    <span class="l" style="--i:4">~/Downloads/eicar.com -&gt; [d]elete, [a]ccept (never flag again), [s]kip? <span class="caret"></span></span>
-  </div>
-  <p class="cap">The output format is real. The folder and file count are an example, and eicar.com is the industry-standard harmless test file that every antivirus is meant to flag.</p>
+  <figure class="win">
+    <img src="img/window-home.webp" width="560" height="732" alt="The ZengAV window: a Scan computer button, a Check card with Files and Folder buttons, and a Signatures panel, in black and white.">
+    <figcaption class="cap">The real window, on macOS.</figcaption>
+  </figure>
 </div>
 
-<section id="commands">
+<section id="jobs">
   <div class="wrap">
     <h2>Only the two things you actually do</h2>
-    <p>There is no dashboard, tray icon, scheduler or account. You run a command, read the result, and it exits.</p>
+    <p class="lead">There is no dashboard, no account and no scheduler. Press a button, read the result, decide what to do with each finding.</p>
     <div class="cmds">
       <div class="cmd">
         <h3>scan</h3>
         <p>Walks every drive on the computer, skipping system pseudo-files that hold nothing to scan.</p>
         <div class="sig">zengav scan</div>
         <dl>
-          <dt>--update</dt><dd>Fetch the newest malware hashes and rules first.</dd>
+          <dt>--update</dt><dd>Fetch the newest rules and hashes first.</dd>
           <dt>--heuristics</dt><dd>Also report weak signals, like packed programs in temp folders.</dd>
           <dt>--full</dt><dd>Ignore the unchanged-file cache and rescan everything.</dd>
         </dl>
       </div>
       <div class="cmd">
         <h3>check</h3>
-        <p>Scans only what you name: one file, several, or whole folders. Use it on a download before you open it.</p>
+        <p>Looks only at what you name: one file, several, or whole folders. Drop them on the window, or use it on a download before you open it.</p>
         <div class="sig">zengav check &lt;path&gt;...</div>
         <dl>
           <dt>--report-only</dt><dd>Show findings and never ask. Good for scripts.</dd>
@@ -68,14 +67,27 @@
   </div>
 </section>
 
+<section id="results">
+  <div class="wrap split">
+    <figure class="win">
+      <img src="img/window-results.webp" width="560" height="732" alt="The ZengAV results screen listing one threat, a test file, with Delete, Accept and Skip buttons.">
+    </figure>
+    <div>
+      <h2>You decide what happens to each finding</h2>
+      <p class="lead">Every detection is listed with its path and the reason it was flagged. Delete removes the file. Accept remembers that exact content so it is never flagged again. Skip leaves it alone. Nothing is deleted unless you press Delete.</p>
+      <p class="cap">The file shown is eicar.com, the industry-standard harmless test file that every antivirus is meant to flag.</p>
+    </div>
+  </div>
+</section>
+
 <section id="how">
   <div class="wrap">
     <h2>Cheapest check first, stop at the first hit</h2>
-    <p>Every file goes through these in order. Most files are cleared by the first step without ever being opened by a rule engine.</p>
+    <p class="lead">Every file goes through these in order. Most files are cleared by the first step without ever being opened by a rule engine.</p>
     <ol class="layers">
       <li><h3>Known malware hash</h3><p>A SHA-256 of the file is looked up in a sorted database that is memory-mapped, so a database of millions of hashes costs almost no RAM.</p></li>
       <li><h3>YARA rules</h3><p>Executables, scripts, documents and archives are matched against compiled YARA-X rules, which describe malware by its patterns instead of its exact bytes. Your own rules go in a folder and are picked up on the next update.</p></li>
-      <li><h3>Heuristics (opt-in)</h3><p>A weak signal, reported as suspicious and never as proven malware: for example a high-entropy executable sitting in a temp folder. Off unless you pass <code>--heuristics</code>.</p></li>
+      <li><h3>Heuristics (opt-in)</h3><p>A weak signal, reported as suspicious and never as proven malware: for example a high-entropy executable sitting in a temp folder. Off unless you turn it on.</p></li>
     </ol>
   </div>
 </section>
@@ -83,9 +95,9 @@
 <section id="light">
   <div class="wrap">
     <h2>Light enough to forget about</h2>
-    <p>ZengAV only uses resources while you run it.</p>
+    <p class="lead">ZengAV only works while you are using it.</p>
     <ul class="facts">
-      <li><strong>No background process</strong>No daemon, login item or scheduled task. It starts, scans, exits.</li>
+      <li><strong>Nothing scans in the background</strong>The tray icon is just a menu: open the window, start a scan, check files, quit. Quit it and nothing is left running.</li>
       <li><strong>Half your cores, lowest priority</strong>Worker threads are capped at half the processor, and the scan runs at the lowest CPU priority.</li>
       <li><strong>Files are streamed</strong>Each file is read in 64 KB pieces, so a 20 GB disk image costs the same memory as a text file.</li>
       <li><strong>Unchanged files are skipped</strong>After a clean scan, files with the same size and modified time are not read again until your signatures change.</li>
@@ -94,21 +106,36 @@
       <div><b>8 min</b><span>first full scan, 2.35 million files</span></div>
       <div><b>69 s</b><span>repeat scan, unchanged files skipped</span></div>
       <div><b>174 MB</b><span>peak memory, full scan with rules loaded</span></div>
-      <div><b>5 MB</b><span>peak memory with hashes only</span></div>
+      <div><b>100 MB</b><span>window open and idle, tray running</span></div>
     </div>
-    <p class="fine">Measured on one 10-core Mac with an SSD, using the 310 rule files that <code>--update</code> downloads. The scan could not read 864 files because of permissions. Memory is the peak resident size reported by the system. Your times will depend on your disk and how many files you have.</p>
+    <p class="fine">Measured on one 10-core Mac with an SSD, using the 310 rule files that Update downloads. The scan could not read 864 files because of permissions. Memory is the peak resident size reported by the system. Your times will depend on your disk and how many files you have.</p>
+  </div>
+</section>
+
+<section id="terminal">
+  <div class="wrap">
+    <h2>Prefer the terminal?</h2>
+    <p class="lead">The command line does the same two jobs with the same engine. It is a separate small program, so servers and scripts never load a window.</p>
+    <div class="term" role="img" aria-label="Terminal session: zengav check on a folder finds one threat, a test file, and asks whether to delete, accept or skip it.">
+      <span class="l" style="--i:0"><span class="p">$</span> zengav check ~/Downloads</span>
+      <span class="l dim" style="--i:1">Scanned 412 files (0 unchanged skipped, 0 unreadable)</span>
+      <span class="l" style="--i:2"><span class="bad">1 threat(s) found:</span></span>
+      <span class="l" style="--i:3">  ~/Downloads/eicar.com  [275a021bbfb6] known malware hash</span>
+      <span class="l" style="--i:4">~/Downloads/eicar.com -&gt; [d]elete, [a]ccept (never flag again), [s]kip? <span class="caret"></span></span>
+    </div>
+    <p class="cap">The output format is real. The folder and file count are an example.</p>
   </div>
 </section>
 
 <section id="limits">
   <div class="wrap">
     <h2>What it will not do</h2>
-    <p>A small tool should be clear about its edges.</p>
+    <p class="lead">A small tool should be clear about its edges.</p>
     <ul class="limits">
       <li><strong>It does not watch your computer.</strong> There is no real-time protection and no kernel driver. It finds what is on disk when you run it.</li>
       <li><strong>It is only as good as its signatures.</strong> It will not catch a brand-new threat that nobody has described yet. Treat it as a strong second opinion next to the protection your operating system already provides.</li>
-      <li><strong>Malware hashes need a free key.</strong> abuse.ch, which publishes the hash list, requires each person to get their own free Auth-Key at auth.abuse.ch. Without one, ZengAV still uses YARA rules, but skips the hash feed.</li>
-      <li><strong>It never deletes on its own.</strong> Deleting happens only when you answer <code>d</code> or pass <code>--delete</code>.</li>
+      <li><strong>Malware hashes need a free key.</strong> abuse.ch, which publishes the hash list, requires each person to get their own free Auth-Key at auth.abuse.ch. Paste it into the Signatures panel. Without one, ZengAV still uses YARA rules, but skips the hash feed.</li>
+      <li><strong>It never deletes on its own.</strong> Deleting happens only when you press Delete, or pass <code>--delete</code> on the command line.</li>
       <li><strong>It sends nothing anywhere.</strong> The only network traffic is the update you ask for. There is no telemetry.</li>
     </ul>
   </div>
@@ -117,26 +144,26 @@
 <section id="download">
   <div class="wrap">
     <h2>Get ZengAV</h2>
-    <p>One file, no installer, no account. Each release lists a SHA-256 checksum next to every download.</p>
+    <p class="lead">No installer and no account. Each download contains the app and the command-line program, and each release lists a SHA-256 checksum next to every file.</p>
     <table class="dl">
       <tbody>
         <tr><th scope="row">macOS</th><td>Apple silicon and Intel</td><td><a href="https://github.com/SirCreativeZHLM/ZengAV/releases/latest">Releases</a></td></tr>
         <tr><th scope="row">Windows</th><td>64-bit</td><td><a href="https://github.com/SirCreativeZHLM/ZengAV/releases/latest">Releases</a></td></tr>
-        <tr><th scope="row">Linux</th><td>64-bit</td><td><a href="https://github.com/SirCreativeZHLM/ZengAV/releases/latest">Releases</a></td></tr>
+        <tr><th scope="row">Linux</th><td>64-bit, tray needs an indicator-capable desktop</td><td><a href="https://github.com/SirCreativeZHLM/ZengAV/releases/latest">Releases</a></td></tr>
       </tbody>
     </table>
     <pre class="snip"><span class="dim"># or build it yourself with Rust</span>
 cargo install --git https://github.com/SirCreativeZHLM/ZengAV
 
-<span class="dim"># first run: fetch rules, then scan</span>
-zengav check ~/Downloads --update</pre>
+<span class="dim"># command line only, no window or tray</span>
+cargo install --git https://github.com/SirCreativeZHLM/ZengAV --no-default-features</pre>
   </div>
 </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <span>ZengAV is free software, licensed MIT or Apache-2.0, at your choice.</span>
+    <span>ZengAV is free software, licensed MIT or Apache-2.0, at your choice. Interface font: Familjen Grotesk, SIL Open Font License.</span>
     <span><a href="https://github.com/SirCreativeZHLM/ZengAV">Source</a> &nbsp; <a href="/">zengbot.com</a></span>
   </div>
 </footer>

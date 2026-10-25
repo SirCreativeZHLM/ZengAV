@@ -1,8 +1,9 @@
 [package]
 name = "zengav"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "No-bloat antivirus: scan the computer, check files or folders"
+default-run = "zengav"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
@@ -15,15 +16,37 @@ memmap2 = "0.9.12"
 ureq = "2"
 yara-x = "1.22.0"
 zip = { version = "9", default-features = false, features = ["deflate"] }
+eframe = { version = "0.37", optional = true }
+tray-icon = { version = "0.26", optional = true }
+rfd = { version = "0.17", optional = true }
 
 [profile.release]
 lto = true
 codegen-units = 1
 strip = true
-panic = "abort"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_System_Threading", "Win32_Foundation"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { version = "0.18", optional = true }
+
+[features]
+default = ["gui"]
+gui = ["dep:eframe", "dep:tray-icon", "dep:rfd", "dep:gtk"]
+
+[lib]
+name = "zengav"
+path = "src/lib.rs"
+
+[[bin]]
+name = "zengav"
+path = "src/main.rs"
+
+[[bin]]
+name = "zengav-gui"
+path = "src/bin/zengav-gui.rs"
+required-features = ["gui"]

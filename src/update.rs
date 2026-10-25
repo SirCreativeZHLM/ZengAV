@@ -12,7 +12,7 @@ fn get(url: &str, limit: u64) -> Result<Vec<u8>, String> {
     Ok(buf)
 }
 
-fn abusech_key() -> Option<String> {
+pub fn abusech_key() -> Option<String> {
     std::env::var("ZENGAV_ABUSECH_KEY")
         .ok()
         .or_else(|| std::fs::read_to_string(db::data_dir().join("abusech.key")).ok())
@@ -28,35 +28,37 @@ fn parse_hashes(text: &str) -> Vec<db::Hash> {
         .collect()
 }
 
-pub fn run() {
+/// Fetch hashes and rules; returns human-readable status lines.
+pub fn run() -> Vec<String> {
+    let mut log: Vec<String> = Vec::new();
     match abusech_key() {
         Some(k) => match get(&format!("{MB_URL}/{k}/recent.csv"), 512 << 20) {
             Ok(b) => {
                 let hashes = parse_hashes(&String::from_utf8_lossy(&b));
                 if hashes.is_empty() {
-                    eprintln!("MalwareBazaar: no hashes in response (bad key?)");
+                    log.push("MalwareBazaar: no hashes in response (bad key?)".into());
                 } else {
                     let added = hashes.len();
                     match db::merge_hashes(hashes) {
-                        Ok(total) => println!("Hashes: merged {added} from MalwareBazaar, {total} total"),
-                        Err(e) => eprintln!("Hashes: could not write database: {e}"),
+                        Ok(total) => log.push(format!("Hashes: merged {added} from MalwareBazaar, {total} total")),
+                        Err(e) => log.push(format!("Hashes: could not write database: {e}")),
                     }
                 }
             }
-            Err(e) => eprintln!("MalwareBazaar download failed: {e}"),
+            Err(e) => log.push(format!("MalwareBazaar download failed: {e}")),
         },
-        None => eprintln!(
+        None => log.push(format!(
             "No abuse.ch Auth-Key: skipping malware hashes. Get a free key at https://auth.abuse.ch/ \
              and set ZENGAV_ABUSECH_KEY or put it in {}",
             db::data_dir().join("abusech.key").display()
-        ),
+        )),
     }
     let feeds = std::fs::read_to_string(db::data_dir().join("feeds.txt")).unwrap_or_else(|_| DEFAULT_RULES.to_string());
     let mut sources = Vec::new();
     for url in feeds.lines().map(str::trim).filter(|l| l.starts_with("https://")) {
         match get(url, 256 << 20) {
             Ok(b) => sources.extend(crate::yara::sources_from_zip(&b)),
-            Err(e) => eprintln!("Rules: {url} failed: {e}"),
+            Err(e) => log.push(format!("Rules: {url} failed: {e}")),
         }
     }
     // Your own rules: any .yar/.yara file in <config>/zengav/rules/.
@@ -64,11 +66,12 @@ pub fn run() {
         sources.extend(rd.filter_map(|e| std::fs::read_to_string(e.ok()?.path()).ok()));
     }
     if sources.is_empty() {
-        eprintln!("Rules: nothing downloaded; keeping existing rules");
-        return;
+        log.push("Rules: nothing downloaded; keeping existing rules".into());
+        return log;
     }
     match crate::yara::compile_and_save(&sources) {
-        Ok((ok, bad)) => println!("Rules: compiled {ok} files ({bad} skipped as incompatible)"),
-        Err(e) => eprintln!("Rules: could not save: {e}"),
+        Ok((ok, bad)) => log.push(format!("Rules: compiled {ok} files ({bad} skipped as incompatible)")),
+        Err(e) => log.push(format!("Rules: could not save: {e}")),
     }
+    log
 }
