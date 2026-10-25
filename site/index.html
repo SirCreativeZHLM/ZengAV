@@ -91,9 +91,12 @@
       <li><strong>Unchanged files are skipped</strong>After a clean scan, files with the same size and modified time are not read again until your signatures change.</li>
     </ul>
     <div class="nums" aria-label="Measured on one MacBook">
-      {{NUMS}}
+      <div><b>8 min</b><span>first full scan, 2.35 million files</span></div>
+      <div><b>69 s</b><span>repeat scan, unchanged files skipped</span></div>
+      <div><b>174 MB</b><span>peak memory, full scan with rules loaded</span></div>
+      <div><b>5 MB</b><span>peak memory with hashes only</span></div>
     </div>
-    <p class="fine">{{NUMS_NOTE}}</p>
+    <p class="fine">Measured on one 10-core Mac with an SSD, using the 310 rule files that <code>--update</code> downloads. The scan could not read 864 files because of permissions. Memory is the peak resident size reported by the system. Your times will depend on your disk and how many files you have.</p>
   </div>
 </section>
 

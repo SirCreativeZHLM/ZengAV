@@ -23,7 +23,7 @@ Findings are reported, then you pick per file: **d**elete, **a**ccept (never fla
 ## How it decides
 
 1. SHA-256 against a memory-mapped, sorted hash database (plus `hashes.txt` for your own hashes).
-2. YARA-X rules on executables, scripts, documents and archives (up to 64 MB).
+2. YARA-X rules on executables, scripts, documents and archives (up to 16 MB).
 3. Optional heuristics, reported as "suspicious".
 
 Files unchanged since the last clean scan are skipped until signatures change. Workers are capped at half the cores and run at the lowest priority.

@@ -70,7 +70,7 @@ pub fn lower_priority() {
     }
 }
 
-const YARA_MAX_SIZE: u64 = 64 << 20;
+const YARA_MAX_SIZE: u64 = 16 << 20;
 
 pub fn run(roots: &[PathBuf], db: &Db, opts: &Options) -> Report {
     lower_priority();

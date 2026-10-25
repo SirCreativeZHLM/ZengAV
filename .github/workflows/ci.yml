@@ -27,7 +27,7 @@ jobs:
       matrix:
         include:
           - {os: macos-latest,   target: aarch64-apple-darwin,      name: zengav-macos-arm64,   ext: tar.gz}
-          - {os: macos-13,       target: x86_64-apple-darwin,       name: zengav-macos-x64,     ext: tar.gz}
+          - {os: macos-latest,   target: x86_64-apple-darwin,       name: zengav-macos-x64,     ext: tar.gz}
           - {os: ubuntu-latest,  target: x86_64-unknown-linux-gnu,  name: zengav-linux-x64,     ext: tar.gz}
           - {os: windows-latest, target: x86_64-pc-windows-msvc,    name: zengav-windows-x64,   ext: zip}
     runs-on: ${{ matrix.os }}
