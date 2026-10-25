@@ -6,6 +6,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use std::sync::Mutex;
 use walkdir::WalkDir;
 
 pub struct Detection {
@@ -30,7 +31,7 @@ pub struct Options {
 
 /// Pseudo or volatile filesystems that hold no files worth scanning.
 fn skipped(p: &Path) -> bool {
-    const SKIP: &[&str] = &["/proc", "/sys", "/dev", "/run", "/private/var/vm", "/System/Volumes/VM", "/System/Volumes/Preboot"];
+    const SKIP: &[&str] = &["/proc", "/sys", "/dev", "/run", "/private/var/vm", "/System/Volumes/VM", "/System/Volumes/Preboot", "/System/Volumes/Data"];
     SKIP.iter().any(|s| p == Path::new(s))
 }
 
@@ -71,22 +72,18 @@ pub fn lower_priority() {
 
 const YARA_MAX_SIZE: u64 = 64 << 20;
 
-enum Outcome {
-    Clean(Option<cache::Entry>),
-    Unchanged,
-    Hit(Detection),
-    Err,
-}
-
 pub fn run(roots: &[PathBuf], db: &Db, opts: &Options) -> Report {
     lower_priority();
     let threads = (std::thread::available_parallelism().map(|n| n.get()).unwrap_or(2) / 2).max(1);
     let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build().expect("thread pool");
     let rules = crate::yara::load();
     let cache = Cache::load(opts.heuristics);
-    let seen = AtomicU64::new(0);
+    let spill = cache::Spill::new().ok();
 
-    let outcomes: Vec<Outcome> = pool.install(|| {
+    let (scanned, unchanged, errors) = (AtomicU64::new(0), AtomicU64::new(0), AtomicU64::new(0));
+    let detections: Mutex<Vec<Detection>> = Mutex::new(Vec::new());
+
+    pool.install(|| {
         let files = roots.iter().flat_map(|r| {
             WalkDir::new(r)
                 .follow_links(false)
@@ -95,71 +92,78 @@ pub fn run(roots: &[PathBuf], db: &Db, opts: &Options) -> Report {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file())
         });
-        files
-            .par_bridge()
-            .map_init(
-                || rules.as_ref().map(crate::yara::scanner),
-                |yscan, e| {
-                    let path = e.path();
-                    let md = e.metadata().ok();
-                    let ce = md.as_ref().and_then(|m| cache::entry(path, m));
-                    if !opts.full && ce.is_some_and(|c| cache.hit(c)) {
-                        return Outcome::Unchanged;
+        files.par_bridge().for_each_init(
+            || (rules.as_ref().map(crate::yara::scanner), spill.as_ref().map(|s| s.writer())),
+            |(yscan, out), e| {
+                let path = e.path();
+                let md = e.metadata().ok();
+                let ce = md.as_ref().and_then(|m| cache::entry(path, m));
+                if !opts.full && ce.is_some_and(|c| cache.hit(c)) {
+                    if let (Some(c), Some(o)) = (ce, out.as_mut()) {
+                        o.push(c);
                     }
-                    if opts.verbose {
-                        eprintln!("scanning {}", path.display());
+                    unchanged.fetch_add(1, Relaxed);
+                    return;
+                }
+                if opts.verbose {
+                    eprintln!("scanning {}", path.display());
+                }
+                let hash = match sha256(path) {
+                    Ok(h) => h,
+                    Err(_) => {
+                        errors.fetch_add(1, Relaxed);
+                        return;
                     }
-                    seen.fetch_add(1, Relaxed);
-                    let hash = match sha256(path) {
-                        Ok(h) => h,
-                        Err(_) => return Outcome::Err,
-                    };
-                    let hex = db::to_hex(&hash);
-                    let hit = |reason: String| Outcome::Hit(Detection { path: path.to_path_buf(), hash: hex.clone(), reason });
-                    if db.is_malicious(&hash) {
-                        return hit("known malware hash".into());
-                    }
-                    if db.is_allowed(&hash) {
-                        return Outcome::Clean(ce);
-                    }
+                };
+                scanned.fetch_add(1, Relaxed);
+                let hex = db::to_hex(&hash);
+                let found = |reason: String| {
+                    detections.lock().unwrap().push(Detection { path: path.to_path_buf(), hash: hex.clone(), reason });
+                };
+                let mut reason: Option<String> = None;
+                if db.is_malicious(&hash) {
+                    reason = Some("known malware hash".into());
+                } else if !db.is_allowed(&hash) {
                     let size = md.as_ref().map_or(0, |m| m.len());
                     if size > 0 && (yscan.is_some() || opts.heuristics) {
                         let head = crate::heur::read_head(path);
-                        if let Some(s) = yscan.as_mut().filter(|_| size <= YARA_MAX_SIZE && crate::heur::worth_rules(path, &head)) {
-                            let m = crate::yara::matches(s, path);
+                        if let Some(sc) = yscan.as_mut().filter(|_| size <= YARA_MAX_SIZE && crate::heur::worth_rules(path, &head)) {
+                            let m = crate::yara::matches(sc, path);
                             if !m.is_empty() {
-                                return hit(format!("YARA rule: {}", m.join(", ")));
+                                reason = Some(format!("YARA rule: {}", m.join(", ")));
                             }
                         }
-                        if opts.heuristics {
-                            if let Some(r) = crate::heur::suspicious(path, &head) {
-                                return hit(format!("suspicious: {r}"));
-                            }
+                        if reason.is_none() && opts.heuristics {
+                            reason = crate::heur::suspicious(path, &head).map(|r| format!("suspicious: {r}"));
                         }
                     }
-                    Outcome::Clean(ce)
-                },
-            )
-            .collect()
+                }
+                match reason {
+                    Some(r) => found(r),
+                    None => {
+                        if let (Some(c), Some(o)) = (ce, out.as_mut()) {
+                            o.push(c);
+                        }
+                    }
+                }
+            },
+        );
     });
 
-    let mut report = Report::default();
-    let mut clean = Vec::new();
-    for o in outcomes {
-        match o {
-            Outcome::Clean(e) => {
-                report.scanned += 1;
-                clean.extend(e);
-            }
-            Outcome::Unchanged => report.skipped_unchanged += 1,
-            Outcome::Hit(d) => {
-                report.scanned += 1;
-                report.detections.push(d);
-            }
-            Outcome::Err => report.errors += 1,
+    if let Some(sp) = spill {
+        // Entries for files outside this run's roots stay valid, so carry them forward.
+        {
+            let mut w = sp.writer_raw();
+            let _ = cache.carry_over(&mut w);
         }
+        let _ = sp.finish(opts.heuristics);
     }
-    clean.extend(cache.entries());
-    let _ = Cache::save(clean, opts.heuristics);
-    report
+    let mut detections = detections.into_inner().unwrap();
+    detections.sort_by(|a, b| a.path.cmp(&b.path));
+    Report {
+        scanned: scanned.into_inner(),
+        skipped_unchanged: unchanged.into_inner(),
+        errors: errors.into_inner(),
+        detections,
+    }
 }
