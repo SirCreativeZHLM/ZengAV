@@ -29,7 +29,7 @@ cat > $WORK/opts.plist <<PL
 <key>signingCertificate</key><string>Developer ID Application</string>
 </dict></plist>
 PL
-for ARCH in arm64 x64; do
+for ARCH in ${=ARCHS:-arm64 x64}; do
   NAME=ZengAV-macos-$ARCH
   D=$WORK/$ARCH; mkdir -p $D; cd $D
   gh release download $TAG -R $REPO -p "$NAME.zip"; unzip -q $NAME.zip; rm $NAME.zip
